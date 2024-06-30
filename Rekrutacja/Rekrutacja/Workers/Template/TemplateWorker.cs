@@ -18,6 +18,15 @@ namespace Rekrutacja.Workers.Template
         //Aby parametry działały prawidłowo dziedziczymy po klasie ContextBase
         public class TemplateWorkerParametry : ContextBase
         {
+            [Caption("Zmienna X")]
+            public double ZmiennaX { get; set; }
+
+            [Caption("Zmienna Y")]
+            public double ZmiennaY { get; set; }
+
+            [Caption("Operacja")]
+            public string Operacja { get; set; }
+
             [Caption("Data obliczeń")]
             public Date DataObliczen { get; set; }
             public TemplateWorkerParametry(Context context) : base(context)
@@ -44,10 +53,40 @@ namespace Rekrutacja.Workers.Template
             //Włączenie Debug, aby działał należy wygenerować DLL w trybie DEBUG
             DebuggerSession.MarkLineAsBreakPoint();
             //Pobieranie danych z Contextu
-            Pracownik pracownik = null;
-            if (this.Cx.Contains(typeof(Pracownik)))
+            List<Pracownik> pracownicy = new List<Pracownik>();
+            if (this.Cx.Contains(typeof(Pracownik[])))
             {
-                pracownik = (Pracownik)this.Cx[typeof(Pracownik)];
+                pracownicy = ((Pracownik[])this.Cx[typeof(Pracownik[])]).ToList();
+            }
+            else if (this.Cx.Contains(typeof(Pracownik)))
+            {
+                pracownicy.Add((Pracownik)this.Cx[typeof(Pracownik)]);
+            }
+
+            double wynik = 0;
+            switch (this.Parametry.Operacja)
+            {
+                case "+":
+                    wynik = this.Parametry.ZmiennaX + this.Parametry.ZmiennaY;
+                    break;
+                case "-":
+                    wynik = this.Parametry.ZmiennaX - this.Parametry.ZmiennaY;
+                    break;
+                case "*":
+                    wynik = this.Parametry.ZmiennaX * this.Parametry.ZmiennaY;
+                    break;
+                case "/":
+                    if (this.Parametry.ZmiennaY != 0)
+                    {
+                        wynik = this.Parametry.ZmiennaX / this.Parametry.ZmiennaY;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Dzielenie przez zero jest niedozwolone.");
+                    }
+                    break;
+                default:
+                    throw new InvalidOperationException("Nieznana operacja.");
             }
 
             //Modyfikacja danych
@@ -57,10 +96,15 @@ namespace Rekrutacja.Workers.Template
                 //Otwieramy Transaction aby można było edytować obiekt z sesji
                 using (ITransaction trans = nowaSesja.Logout(true))
                 {
-                    //Pobieramy obiekt z Nowo utworzonej sesji
-                    var pracownikZSesja = nowaSesja.Get(pracownik);
-                    //Features - są to pola rozszerzające obiekty w bazie danych, dzięki czemu nie jestesmy ogarniczeni to kolumn jakie zostały utworzone przez producenta
-                    pracownikZSesja.Features["DataObliczen"] = this.Parametry.DataObliczen;
+                    foreach (var pracownik in pracownicy)
+                    {
+                        //Pobieramy obiekt z Nowo utworzonej sesji
+                        var pracownikZSesja = nowaSesja.Get(pracownik);
+                        //Features - są to pola rozszerzające obiekty w bazie danych, dzięki czemu nie jestesmy ogarniczeni to kolumn jakie zostały utworzone przez producenta
+                        pracownikZSesja.Features["Wynik"] = wynik;
+                        pracownikZSesja.Features["DataObliczen"] = this.Parametry.DataObliczen;
+                    }
+                      
                     //Zatwierdzamy zmiany wykonane w sesji
                     trans.CommitUI();
                 }
