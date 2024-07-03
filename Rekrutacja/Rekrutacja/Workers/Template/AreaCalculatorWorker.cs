@@ -7,21 +7,13 @@ using Soneta.KadryPlace;
 using Soneta.Types;
 using Rekrutacja.Workers.Template;
 
-[assembly: Worker(typeof(FiguraWorker), typeof(Pracownicy))]
+[assembly: Worker(typeof(AreaCalculatorWorker), typeof(Pracownicy))]
 
 namespace Rekrutacja.Workers.Template
 {
-    public enum Figura
+    public class AreaCalculatorWorker
     {
-        Kwadrat,
-        Prostokat,
-        Trojkat,
-        Kolo
-    }
-
-    public class FiguraWorker
-    {
-        public class FiguraWorkerParametry : ContextBase
+        public class AreaCalculatorWorkerParams : ContextBase
         {
             [Caption("Zmienna A (r dla koła)")]
             public double ZmiennaA { get; set; }
@@ -30,12 +22,12 @@ namespace Rekrutacja.Workers.Template
             public double ZmiennaB { get; set; }
 
             [Caption("Figura")]
-            public Figura Figura { get; set; }
+            public ShapeType Figura { get; set; }
 
             [Caption("Data obliczeń")]
             public Date DataObliczen { get; set; }
 
-            public FiguraWorkerParametry(Context context) : base(context)
+            public AreaCalculatorWorkerParams(Context context) : base(context)
             {
                 this.DataObliczen = Date.Today;
             }
@@ -45,7 +37,7 @@ namespace Rekrutacja.Workers.Template
         public Context Cx { get; set; }
 
         [Context]
-        public FiguraWorkerParametry Parametry { get; set; }
+        public AreaCalculatorWorkerParams Parametry { get; set; }
 
         [Action("Oblicz pole figury",
                 Description = "Kalkulator pola powierzchni figur",
@@ -69,16 +61,16 @@ namespace Rekrutacja.Workers.Template
             int wynik = 0;
             switch (this.Parametry.Figura)
             {
-                case Figura.Kwadrat:
+                case ShapeType.Kwadrat:
                     wynik = (int)(this.Parametry.ZmiennaA * this.Parametry.ZmiennaA);
                     break;
-                case Figura.Prostokat:
+                case ShapeType.Prostokat:
                     wynik = (int)(this.Parametry.ZmiennaA * this.Parametry.ZmiennaB);
                     break;
-                case Figura.Trojkat:
+                case ShapeType.Trojkat:
                     wynik = (int)(0.5 * this.Parametry.ZmiennaA * this.Parametry.ZmiennaB);
                     break;
-                case Figura.Kolo:
+                case ShapeType.Kolo:
                     wynik = (int)(Math.PI * this.Parametry.ZmiennaA * this.Parametry.ZmiennaA);
                     break;
                 default:
